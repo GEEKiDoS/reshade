@@ -291,53 +291,9 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD fdwReason, LPVOID)
 					reshade::hooks::register_module(get_system_path() / L"dinput.dll");
 					reshade::hooks::register_module(get_system_path() / L"dinput8.dll");
 				}
-
-#if RESHADE_ADDON == 1
-				if (!GetEnvironmentVariableW(L"RESHADE_DISABLE_NETWORK_HOOK", nullptr, 0))
-				{
-					reshade::hooks::register_module(L"ws2_32.dll");
-				}
-				else
-				{
-					// Disable network hooks when requested through an environment variable and always disable add-ons in that case
-					extern volatile long g_network_traffic;
-					g_network_traffic = std::numeric_limits<long>::max(); // Special value to indicate that add-ons should never be enabled
-					reshade::addon_enabled = false;
-				}
-#endif
-
-				if (!GetEnvironmentVariableW(L"RESHADE_DISABLE_GRAPHICS_HOOK", nullptr, 0))
-				{
-					// Only register D3D hooks when module is not called opengl32.dll
-					if (!is_opengl)
-					{
-						// Register DirectDraw module in case it was used to load ReShade (but ignore otherwise)
-						if (_wcsicmp(module_name.c_str(), L"ddraw") == 0)
-							reshade::hooks::register_module(get_system_path() / L"ddraw.dll");
-
-						reshade::hooks::register_module(get_system_path() / L"d2d1.dll");
-						reshade::hooks::register_module(get_system_path() / L"d3d9.dll");
-						reshade::hooks::register_module(get_system_path() / L"d3d10.dll");
-						reshade::hooks::register_module(get_system_path() / L"d3d10_1.dll");
-						reshade::hooks::register_module(get_system_path() / L"d3d11.dll");
-
-						// On Windows 7 the d3d12on7 module is not in the system path, so register to hook any d3d12.dll loaded instead
-						if (is_windows7() && _wcsicmp(module_name.c_str(), L"d3d12") != 0)
-							reshade::hooks::register_module(L"d3d12.dll");
-						else
-							reshade::hooks::register_module(get_system_path() / L"d3d12.dll");
-
-						reshade::hooks::register_module(get_system_path() / L"dxgi.dll");
-					}
-
-					// Only register OpenGL hooks when module is not called any D3D module name
-					if (!is_d3d && !is_dxgi)
-						reshade::hooks::register_module(get_system_path() / L"opengl32.dll");
-
-					// Do not register Vulkan hooks, since Vulkan layering mechanism is used instead
-
-					reshade::hooks::register_module(L"openvr_api.dll");
-				}
+				
+				reshade::addon_enabled = true;
+				reshade::hooks::register_module(L"vulkan-1.dll");
 			}
 
 			reshade::log::message(reshade::log::level::info, "Initialized.");
